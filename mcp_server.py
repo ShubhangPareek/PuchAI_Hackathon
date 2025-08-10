@@ -18,6 +18,7 @@ AUTH_TOKEN = os.getenv("AUTH_TOKEN")
 PORT = int(os.getenv("PORT", "8086"))
 if not AUTH_TOKEN:
     raise RuntimeError("AUTH_TOKEN missing. Put it in .env")
+MY_NUMBER = os.getenv("MY_NUMBER", "").strip()
 
 # ====== FastAPI app ======
 app = FastAPI(title="Puch MCP Server", docs_url=None, redoc_url=None)
@@ -74,6 +75,16 @@ def tool_image_bw(params: Dict[str, Any]) -> Dict[str, Any]:
         return {"image_base64": out_b64}
     except Exception as e:
         raise ValueError(f"Invalid image_base64: {e}")
+
+# ====== Puch validation tool ======
+def tool_validate(params: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Return the registered WhatsApp number in {country_code}{number} format.
+    Example: 919998881729
+    """
+    if not MY_NUMBER or not MY_NUMBER.isdigit():
+        raise ValueError("Server misconfigured: set MY_NUMBER env as digits like 919998881729")
+    return {"number": MY_NUMBER}
 
 
 # ====== Trip Planner tools ======
@@ -420,6 +431,12 @@ TOOLS = {
             "required": ["image_base64"]
         },
         "handler": tool_image_bw,
+    },
+    "validate": {
+        "name": "validate",
+        "description": "Return the server's registered WhatsApp number for Puch validation.",
+        "input_schema": {"type": "object", "properties": {}},
+        "handler": tool_validate,
     },
     "geocode": {
         "name": "geocode",
